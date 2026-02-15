@@ -1,0 +1,108 @@
+Project olist_ecommerce_analysis {
+  database_type: "PostgreSQL"
+}
+
+/* =========================
+   FACT TABLES
+   ========================= */
+
+Table analysis_fact_orders {
+  order_id varchar [pk]
+  customer_id varchar
+  order_status varchar
+
+  order_purchase_date_key int
+  order_delivered_date_key int
+}
+
+Table analysis_fact_order_items {
+  order_id varchar
+  order_item_id int
+  product_id varchar
+  seller_id varchar
+
+  order_purchase_date_key int
+  order_delivered_date_key int
+
+  price numeric
+  freight_value numeric
+
+  Indexes {
+    (order_id, order_item_id) [pk]
+  }
+}
+
+Table analysis_fact_reviews {
+  review_id varchar [pk]
+  order_id varchar
+  review_score int
+
+  review_creation_date_key int
+  review_answer_date_key int
+}
+
+/* =========================
+   DIMENSIONS
+   ========================= */
+
+Table analysis_dim_date {
+  date_key int [pk]
+  date date
+  year int
+  month int
+  day int
+  year_month varchar
+  year_month_sort int
+}
+
+Table analysis_dim_customer {
+  customer_unique_id varchar [pk]
+}
+
+Table analysis_bridge_customer_account {
+  customer_id varchar
+  customer_unique_id varchar
+
+  Indexes {
+    (customer_id, customer_unique_id) [pk]
+  }
+}
+
+Table analysis_dim_products {
+  product_id varchar [pk]
+  product_category_name varchar
+
+  product_weight_g int
+  product_length_cm int
+  product_height_cm int
+  product_width_cm int
+  product_volume_cm3 numeric
+  product_volumetric_density numeric
+}
+
+/* =========================
+   RELATIONSHIPS (1 → *)
+   ========================= */
+
+/* Date → Orders */
+Ref: analysis_dim_date.date_key < analysis_fact_orders.order_purchase_date_key
+Ref: analysis_dim_date.date_key < analysis_fact_orders.order_delivered_date_key
+
+/* Date → Order Items */
+Ref: analysis_dim_date.date_key < analysis_fact_order_items.order_purchase_date_key
+Ref: analysis_dim_date.date_key < analysis_fact_order_items.order_delivered_date_key
+
+/* Date → Reviews */
+Ref: analysis_dim_date.date_key < analysis_fact_reviews.review_creation_date_key
+Ref: analysis_dim_date.date_key < analysis_fact_reviews.review_answer_date_key
+
+/* Customer */
+Ref: analysis_dim_customer.customer_unique_id < analysis_bridge_customer_account.customer_unique_id
+Ref: analysis_bridge_customer_account.customer_id < analysis_fact_orders.customer_id
+
+/* Product */
+Ref: analysis_dim_products.product_id < analysis_fact_order_items.product_id
+
+/* Order header linkage */
+Ref: analysis_fact_orders.order_id < analysis_fact_order_items.order_id
+Ref: analysis_fact_orders.order_id < analysis_fact_reviews.order_id
