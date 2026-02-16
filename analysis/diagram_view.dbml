@@ -41,6 +41,18 @@ Table analysis_fact_reviews {
   review_answer_date_key int
 }
 
+Table analysis_fact_payments {
+  order_id varchar
+  payment_sequential int
+  payment_type varchar
+  payment_installments int
+  payment_value numeric
+
+  Indexes {
+    (order_id, payment_sequential) [pk]
+  }
+}
+
 /* =========================
    DIMENSIONS
    ========================= */
@@ -80,6 +92,17 @@ Table analysis_dim_products {
   product_volumetric_density numeric
 }
 
+Table analysis_dim_sellers {
+  seller_id varchar [pk]
+  seller_zip_code_prefix varchar
+  seller_city varchar
+  seller_state varchar
+}
+
+Table analysis_dim_payment_type {
+  payment_type varchar [pk]
+}
+
 /* =========================
    RELATIONSHIPS (1 → *)
    ========================= */
@@ -102,6 +125,13 @@ Ref: analysis_bridge_customer_account.customer_id < analysis_fact_orders.custome
 
 /* Product */
 Ref: analysis_dim_products.product_id < analysis_fact_order_items.product_id
+
+/* Seller */
+Ref: analysis_dim_sellers.seller_id < analysis_fact_order_items.seller_id
+
+/* Payment */
+Ref: analysis_dim_payment_type.payment_type < analysis_fact_payments.payment_type
+Ref: analysis_fact_orders.order_id < analysis_fact_payments.order_id
 
 /* Order header linkage */
 Ref: analysis_fact_orders.order_id < analysis_fact_order_items.order_id
